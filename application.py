@@ -15,7 +15,6 @@ from itertools import combinations
 from collections import Counter
 
 from konlpy.tag import Okt
-import koreanize_matplotlib
 from matplotlib import font_manager
 
 
