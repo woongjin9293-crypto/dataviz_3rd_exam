@@ -14,7 +14,6 @@ import networkx as nx
 from itertools import combinations
 from collections import Counter
 
-from konlpy.tag import Okt
 from matplotlib import font_manager
 
 
@@ -132,23 +131,20 @@ st.write(f"필터링 후 문서 수: {len(df):,}개")
 st.divider()
 
 
-okt = Okt()
-
-
 def clean_text_ko(text: str) -> str:
     # 쓸데없는 기호나 태그는 제거
-    text = re.sub(r"<[^>]+>", "", text)
+    text = re.sub(r"<[^>]+>", " ", str(text))
     text = re.sub(r"[^가-힣0-9A-Za-z\s]", " ", text)
     text = re.sub(r"\s+", " ", text).strip()
     return text
 
 
-def extract_nouns(text: str, stopwords: set) -> list[str]:
-    # 핵심 단어만 뽑아야 주제 흐름이 보이기에 명사 위주로 가져옴
-    text = clean_text_ko(text)
-    nouns = okt.nouns(text)
-    nouns = [w for w in nouns if (len(w) > 1) and (w not in stopwords)]
-    return nouns
+def extract_keywords_simple(text: str, stopwords: set) -> list[str]:
+    # 자바가 필요한 도구 대신 단어를 간단히 쪼개서 키워드를 뽑음
+    text = clean_text_ko(text).lower()
+    tokens = text.split(" ")
+    tokens = [t for t in tokens if (len(t) > 1) and (t not in stopwords)]
+    return tokens
 
 
 # 검색어 자체는 핵심 요인을 가리는 경우가 많아서 제외함
@@ -158,7 +154,7 @@ stopwords = set(base_stop)
 
 all_nouns = []
 for t in df["text"].tolist():
-    all_nouns.append(extract_nouns(t, stopwords))
+    all_nouns.append(extract_keywords_simple(t, stopwords))
 
 
 st.subheader("언급량 트렌드")
@@ -251,13 +247,19 @@ st.subheader("워드클라우드")
 if len(flat) == 0:
     st.warning("워드클라우드를 만들 수 없습니다.")
 else:
-    # 한글이 깨지지 않게 폰트를 먼저 잡아둠
+    # 한글이 깨지면 보기 힘들어서 가능한 폰트를 먼저 찾아봄
+    han_font_path = None
     try:
-        han_font_path = font_manager.findfont("AppleGothic")
+        han_font_path = font_manager.findfont("NanumGothic")
     except:
         han_font_path = None
 
-    
+    if not han_font_path:
+        try:
+            han_font_path = font_manager.findfont("AppleGothic")
+        except:
+            han_font_path = None
+
     wc = WordCloud(
         font_path=han_font_path,
         max_words=max_words,
