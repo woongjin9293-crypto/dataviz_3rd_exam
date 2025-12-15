@@ -7,4 +7,3 @@ altair
 plotly
 wordcloud
 networkx
-konlpy
